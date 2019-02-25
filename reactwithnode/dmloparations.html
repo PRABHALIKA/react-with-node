@@ -1,0 +1,210 @@
+<script src="react.development.js"></script>
+
+<script src="react-dom.development.js"></script>
+
+<script src="babel.js"></script>
+
+<script src='axios.min.js'></script>
+
+<style>
+</style>
+<div id="root"></div>
+
+<script type="text/babel">
+
+   class Register extends React.Component{
+   constructor(){
+       super();
+       this.state={
+          'dataObj':{
+              'uid':'',
+              'pwd':'',
+              'email':'',
+              'phone':''
+          } ,
+          'msg':'',
+          'isEdit':false,
+          'users':[],
+          'isValid':false
+       }
+    this.fnGetUsers=this.fnGetUsers.bind(this);
+       this.fnGetUsers();
+   }
+
+   fnGetUsers(){
+     axios.get('http://localhost:2021/school/getUsers')
+     .then((res)=>{
+        this.setState({
+            'users':res.data
+        })
+     },(res)=>{
+         this.setState({
+            'users':[]
+        })
+     })
+   }
+    fnChange(key,e){
+        this.setState({
+            dataObj:{
+                ...this.state.dataObj,
+                [key]:e.target.value
+            }
+        },this.fnValidate)
+    }
+
+    fnValidate(){
+        if(this.state.dataObj.uid && this.state.dataObj.pwd && this.state.dataObj.email && this.state.dataObj.phone){
+           this.setState({
+               'isValid':true
+           })
+        } else{
+            this.setState({
+               'isValid':false
+           })
+        }
+    }
+    fnReg(){
+        let inputObj={
+            'data':this.state.dataObj
+        }
+        axios.post('http://localhost:2021/school/insert',inputObj)
+        .then(
+            (res)=>{
+                var msg=""
+                if(res.data.n == 1 && res.data.ok ==1){
+                    msg="success";
+
+                    this.fnGetUsers();
+                }else{
+                    msg='fail'
+                }
+                this.setState({
+                    'msg':msg,
+                    'dataObj':{
+                        'uid':'',
+                        'pwd':'',
+                        'email':'',
+                        'phone':''
+                    }
+                })
+            },
+            (res)=>{
+                debugger;
+                this.setState({
+                    'msg':'something went wrong'
+                })
+            }
+        )
+
+    }
+
+    fnEdit(rowData,e){
+        debugger;
+        this.setState({
+            'dataObj':rowData,
+            'isEdit':true
+        })
+    }
+
+    fnDelete(rowData,e){
+        debugger;
+        let isOk=confirm('R u sure...');
+        if(isOk){
+            axios.get('http://localhost:2021/school/delete?id='+rowData._id)
+            .then(
+            (res)=>{
+                var msg=""
+                if(res.data.n == 1 && res.data.ok ==1){
+                    alert('succes');
+                    this.fnGetUsers();
+                }else{
+                    alert('fail');
+                }
+                
+            },
+            (res)=>{
+                debugger;
+                alert('fail');
+            }
+        )
+        }
+    }
+
+    fnUpdate(){
+        debugger;
+        axios.post('http://localhost:2021/school/update',this.state.dataObj)
+        .then(
+            (res)=>{
+                debugger;
+                var msg=""
+                if(res.data.n == 1 && res.data.ok ==1){
+                    msg="success";
+                    this.fnGetUsers();
+                }else{
+                    msg='fail'
+                }
+                this.setState({
+                    'msg':msg
+                })
+            },
+            (res)=>{
+                debugger;
+                this.setState({
+                    'msg':'something went wrong'
+                })
+            }
+        )
+    }
+       render(){
+           return <div>
+                    <p>
+                      User Name:<input disabled={this.state.isEdit} value={this.state.dataObj.uid} onChange={this.fnChange.bind(this,'uid')} />
+                    </p>
+                    <p>
+                     pwd:<input value={this.state.dataObj.pwd} onChange={this.fnChange.bind(this,'pwd')}/>
+                    </p>
+                    <p>
+                     email:<input value={this.state.dataObj.email} onChange={this.fnChange.bind(this,'email')}/>
+                    </p>
+                    <p>
+                      Phone:<input value={this.state.dataObj.phone} onChange={this.fnChange.bind(this,'phone')}/>
+                    </p>
+                    <p>
+                    {
+                        this.state.isEdit ?  <input type='button' disabled={!this.state.isValid} value="update" onClick={this.fnUpdate.bind(this)} /> :
+                    <input type='button' value="register" onClick={this.fnReg.bind(this)} disabled={!this.state.isValid} />
+                    }
+                   </p>
+                   <p>
+                   <span>{this.state.msg}</span>
+                   </p>
+
+                   <h3>Users</h3>
+                   <table border="2px">
+                        <tr>
+                            <th>User Id</th>
+                            <th>pwd</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Edit</th>
+                            <th>Delete</th>
+                        </tr>
+                        {
+                            this.state.users.map((o)=>{
+                                return <tr>
+                                          <td>{o.uid}</td>
+                                          <td>{o.pwd}</td>
+                                          <td>{o.email}</td>
+                                          <td>{o.phone}</td>
+                                          <td><input type='button' value="edit" onClick={this.fnEdit.bind(this,o)} /></td>
+                                          <td><input type='button' value="delete" onClick={this.fnDelete.bind(this,o)} /></td>
+                                       </tr>
+                            })
+                        }
+                   </table>
+                  </div>
+       }
+   }
+   ReactDOM.render(<Register />, document.getElementById('root'));
+
+</script>
